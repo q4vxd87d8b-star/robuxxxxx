@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: #f2f4f5;
+            overflow-x: hidden;
+        }
+
+        /* Экран загрузки скриншота */
+        #setup-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .upload-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            max-width: 400px;
+        }
+        .upload-btn {
+            background: #111;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover {
+            background: #333;
+        }
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Главный экран со скриншотом */
+        #main-app {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 1920px; /* Ограничиваем ширину для сохранения пропорций */
+            margin: 0 auto;
+        }
+        #bg-image {
+            width: 100%;
+            display: block;
+            pointer-events: none; /* Чтобы картинка не мешала кликам */
+        }
+
+        /* Блоки, перекрывающие старый текст (они белые, чтобы стереть старые надписи) */
+        .overlay {
+            position: absolute;
+            background-color: #ffffff; 
+            cursor: move;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #393b3d;
+            box-sizing: border-box;
+            border: 1px dashed transparent; /* Невидимая рамка */
+            white-space: nowrap;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .overlay:hover {
+            border: 1px dashed #a0a0a0; /* Рамка появляется при наведении для удобства перетаскивания */
+        }
+        .overlay.center {
+            justify-content: center;
+            text-align: center;
+        }
+        .overlay.left {
+            justify-content: flex-start;
+            padding-left: 4px;
+        }
+        
+        .fw-bold { font-weight: 600; }
+        .fw-med { font-weight: 500; font-size: 13px; }
+
+        /* Всплывающая подсказка */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1s;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Стартовый экран для загрузки оригинального скриншота -->
+    <div id="setup-screen">
+        <div class="upload-box">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#393b3d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <h1 style="margin:0 0 10px; font-size:22px;">Точная копия</h1>
+            <p style="margin:0; font-size: 14px; color: #666; line-height: 1.5;">Выберите ваш файл <b>Снимок экрана 2026-10-22 в 13.41.26.jpg</b>. Сайт поставит его на фон и наложит сверху накрутку робуксов и новые ники.</p>
+            <label class="upload-btn">
+                Выбрать скриншот
+                <input type="file" id="imageLoader" accept="image/*">
+            </label>
+        </div>
+    </div>
+
+    <!-- Основное рабочее пространство -->
+    <div id="main-app">
+        <img id="bg-image" src="" alt="Roblox Screenshot">
+        
+        <!-- Ваш новый ник (слева в меню) -->
+        <div class="overlay fw-bold left" style="left: 4.8%; top: 8.4%; width: 12%; height: 3.5%;" id="my-name-1"></div>
+        
+        <!-- Ваш новый ник (сверху справа) -->
+        <div class="overlay fw-bold left" style="left: 77.2%; top: 1.5%; width: 9%; height: 4%;" id="my-name-2"></div>
+        
+        <!-- Баланс Робуксов (Накрутка) -->
+        <div class="overlay fw-bold left" style="left: 92.5%; top: 1.5%; min-width: 4.2%; width: max-content; padding-right: 10px; height: 4%; color: #111; overflow: visible;" id="robux-overlay">0</div>
+        
+        <!-- Ники друзей (с белым фоном, чтобы перекрыть старые ники) -->
+        <!-- Первый друг (высота больше, чтобы закрыть надпись "Украсть яйцо") -->
+        <div class="overlay fw-med center" style="left: 32.5%; top: 35.8%; width: 8.5%; height: 5.5%; align-items: flex-start; padding-top: 5px;"></div>
+        <div class="overlay fw-med center" style="left: 41%; top: 35.8%; width: 8.5%; height: 4%;"></div>
+        <div class="overlay fw-med center" style="left: 49.5%; top: 35.8%; width: 8.5%; height: 4%;"></div>
+        <div class="overlay fw-med center" style="left: 58%; top: 35.8%; width: 8.5%; height: 4%;"></div>
+        <div class="overlay fw-med center" style="left: 66.5%; top: 35.8%; width: 8.5%; height: 4%;"></div>
+        <div class="overlay fw-med center" style="left: 75%; top: 35.8%; width: 8.5%; height: 4%;"></div>
+    </div>
+
+    <div id="toast" style="display: none;">💡 Любой текст можно двигать мышкой, чтобы поставить ровно!</div>
+
+    <script>
+        // Генерация случайных имен
+        const myRandomName = "ShadowGamer_Pro";
+        const friendNames = ["CyberWolf", "xX_Dragon_Xx", "Luna_Star", "Toxic_Viper", "IceQueen", "PixelKing"];
+        
+        // Установка имен
+        document.getElementById('my-name-1').textContent = myRandomName;
+        document.getElementById('my-name-2').textContent = myRandomName;
+        
+        const friendOverlays = document.querySelectorAll('.fw-med.center');
+        friendOverlays.forEach((el, index) => {
+            el.textContent = friendNames[index];
+        });
+
+        // Накрутка робуксов
+        let robuxCount = 0;
+        const robuxOverlay = document.getElementById('robux-overlay');
+        
+        function updateRobux() {
+            // Быстро прибавляем случайное число робуксов
+            robuxCount += Math.floor(Math.random() * 950) + 120;
+            robuxOverlay.textContent = robuxCount.toLocaleString('en-US'); // Формат с запятыми
+            
+            // Запускаем снова через 30-50 миллисекунд
+            setTimeout(updateRobux, Math.floor(Math.random() * 20) + 30);
+        }
+
+        // Логика загрузки изображения
+        document.getElementById('imageLoader').addEventListener('change', function(e) {
+            if (!e.target.files[0]) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // Прячем экран загрузки, показываем сайт
+                document.getElementById('bg-image').src = event.target.result;
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                
+                // Показываем подсказку
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.opacity = '0'; }, 6000);
+                setTimeout(() => { toast.style.display = 'none'; }, 7000);
+
+                // Запускаем накрутку робуксов с небольшой задержкой (чтобы юзер увидел 0, а потом взлет)
+                setTimeout(updateRobux, 800);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        // Логика перетаскивания элементов (Drag & Drop)
+        let isDragging = false;
+        let currentOverlay = null;
+        let startX, startY, startLeft, startTop;
+
+        document.querySelectorAll('.overlay').forEach(el => {
+            el.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                currentOverlay = el;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = parseFloat(el.style.left);
+                startTop = parseFloat(el.style.top);
+                e.preventDefault(); // Предотвращаем выделение текста
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !currentOverlay) return;
+            
+            const container = document.getElementById('main-app');
+            const rect = container.getBoundingClientRect();
+            
+            // Вычисляем смещение в пикселях
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            // Переводим смещение в проценты, чтобы оно оставалось адаптивным
+            const newLeft = startLeft + (dx / rect.width) * 100;
+            const newTop = startTop + (dy / rect.height) * 100;
+            
+            currentOverlay.style.left = `${newLeft}%`;
+            currentOverlay.style.top = `${newTop}%`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            currentOverlay = null;
+        });
+    </script>
+</body>
+</html>
